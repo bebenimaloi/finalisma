@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en" style="background: linear-gradient(180deg, #B2EBF2 100%);">
+<head>
+    <title>ML Model Upload</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: Courier New, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .plot-container {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        #fileUpload {
+            display: block;
+            margin: 20px auto;
+            padding: 10px;
+            position: relative;
+            z-index: 1;
+            cursor: pointer;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            position: relative;
+        }
+        th:hover .tooltip {
+            display: block;
+        }
+        .tooltip {
+            display: none;
+            position: fixed;
+            background: white;
+            color: #333;
+            padding: 15px;
+            border-radius: 4px;
+            font-size: 14px;
+            z-index: 1000;
+            width: 250px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid #ddd;
+            white-space: normal;
+            word-wrap: break-word;
+            pointer-events: none;
+        }
+        .tooltip::before,
+        .tooltip::after {
+            display: none;
+        }
+        .cell-with-validation {
+            cursor: pointer;
+            background-color: #e3f2fd;
+        }
+        #dataTable {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 30px;
+        }
+        .table-note {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            margin: 10px 0;
+            display: none;
+        }
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        .loading-spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        .loading-text {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #333;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <h1>MACHINE LEARNING MODELS USED TO PROVE THE 
+        EFFICACY OF AUGMENTED REALITY IN LEARNING</h1>
+    
+    <input type="file" id="fileUpload" accept=".csv,.xlsx,.xls" />
+    <p class="table-note">Note: Showing first 10 rows of the dataset</p>
+    <div id="dataTable"></div>
+
+    <div class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Analyzing your data... Please wait</div>
+    </div>
+
+    <script>
+        const columnDescriptions = {
+            'Age': "Student's age",
+            'Gender': "Student's gender", 
+            'Grade Level': "Student's grade in school",
+            'Cognitive Abilities': "A score indicating a student's cognitive skills",
+            'Engagement Levels': "A score reflecting how engaged the student is",
+            'Pre-Test Scores': "Score before using AR tools",
+            'Post-Test Scores': "Score after using AR tools",
+            'Score Improvement': "The change between post-test and pre-test scores",
+            'Performance': "Categorized based on improvement:<br>Low: 0-5 points<br>Medium: 5-15 points<br>High: >15 points<br>Extremely High: >25 points",
+            'Time Spent on AR': "Amount of time spent on AR tools (in minutes)",
+            'Frequency of AR Use': "How frequently student uses AR tools (scale 1-5)"
+        };
+
+        document.getElementById('fileUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            document.querySelector('.table-note').style.display = 'block';
+
+            reader.onload = function(e) {
+                let data;
+                if (file.name.endsWith('.csv')) {
+                    data = e.target.result;
+                    const rows = data.split('\n').map(row => row.split(','));
+                    displayTable(rows);
+                } else {
+                    data = e.target.result;
+                    const workbook = XLSX.read(data, {type: 'binary'});
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(firstSheet, {header: 1});
+                    displayTable(rows);
+                }
+            };
+
+            if (file.name.endsWith('.csv')) {
+                reader.readAsText(file);
+            } else {
+                reader.readAsBinaryString(file);
+            }
+        });
+
+        function displayTable(rows) {
+            const tableDiv = document.getElementById('dataTable');
+            let tableHTML = '<table>';
+            
+            // Headers with tooltips
+            if (rows.length > 0) {
+                tableHTML += '<tr>';
+                for (let j = 0; j < rows[0].length; j++) {
+                    const columnName = rows[0][j];
+                    const description = columnDescriptions[columnName] || '';
+                    tableHTML += `<th>${columnName}${description ? `<div class="tooltip">${description}</div>` : ''}</th>`;
+                }
+                tableHTML += '</tr>';
+            }
+
+            // Data rows (only first 10)
+            for (let i = 1; i < Math.min(11, rows.length); i++) {
+                tableHTML += '<tr>';
+                for (let j = 0; j < rows[0].length; j++) {
+                    const value = rows[i][j];
+                    tableHTML += `<td>${value !== undefined ? value : ''}</td>`;
+                }
+                tableHTML += '</tr>';
+            }
+            
+            tableHTML += '</table>';
+            tableDiv.innerHTML = tableHTML;
+        }
+    </script>
+</head>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Model Upload</title>
+    <style>
+        body {
+            background: linear-gradient(120deg, #e0f7fa, #b3e5fc);
+            min-height: 100vh;
+            font-family: Courier New, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .plot-container {
+            border-radius: 15px;
+            border: 2px solid #000000;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .plot-container:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        h2 {
+            text-align: center;
+            padding: 1rem;
+            margin: 0;
+        }
+
+        .plots-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .upload-form {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 2rem 0;
+            text-align: center;
+        }
+
+        .upload-form input[type="file"] {
+            margin: 1rem 0;
+        }
+
+        #fileUpload {
+            display: none;
+        }
+
+        .upload-message {
+            background: #e3f2fd;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 2rem;
+        }
+
+        .model-instruction {
+            text-align: center;
+            font-size: 1.2rem;
+            margin: 2rem 0;
+            padding: 1rem;
+            background: #e3f2fd9d;
+            border-radius: 5px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="upload-form">
+        <input type="file" id="fileUpload" accept=".csv">
+        <div class="upload-message">Please upload your dataset first (.csv file)</div>
+    </div>
+
+    <div class="model-instruction">
+        After uploading your dataset, click on any model below to analyze your data
+    </div>
+
+    <div class="plots-grid">
+        <form action="/process" method="POST" enctype="multipart/form-data" id="randomForestForm">
+            <input type="hidden" name="model" value="random_forest">
+            <div class="plot-container">
+                <h2>Random Forests</h2>
+                <div id="random-forest-plot"></div>
+            </div>
+        </form>
+        
+        <form action="/process" method="POST" enctype="multipart/form-data" id="xgboostForm">
+            <input type="hidden" name="model" value="xgboost">
+            <div class="plot-container">
+                <h2>XGBoost</h2>
+                <div id="xgboost-plot"></div>
+            </div>
+        </form>
+
+        <form action="/process" method="POST" enctype="multipart/form-data" id="neuralNetworkForm">
+            <input type="hidden" name="model" value="neural_network">
+            <div class="plot-container">
+                <h2>Neural Network</h2>
+                <div id="neural-network-plot"></div>
+            </div>
+        </form>
+
+        <form action="/process" method="POST" enctype="multipart/form-data" id="decisionTreeForm">
+            <input type="hidden" name="model" value="decision_tree">
+            <div class="plot-container">
+                <h2>Decision Trees</h2>
+                <div id="decision-tree-plot"></div>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileUpload = document.getElementById('fileUpload');
+            const forms = document.querySelectorAll('form');
+            const uploadMessage = document.querySelector('.upload-message');
+            const loadingOverlay = document.querySelector('.loading-overlay');
+            let uploadedFile = null;
+
+            // Show file upload dialog when clicking the message
+            uploadMessage.addEventListener('click', () => {
+                fileUpload.click();
+            });
+
+            fileUpload.addEventListener('change', function(e) {
+                if (this.files[0]) {
+                    uploadedFile = this.files[0];
+                    uploadMessage.textContent = `Dataset loaded: ${uploadedFile.name}`;
+                    uploadMessage.style.background = '#c8e6c9';
+                }
+            });
+
+            forms.forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    if (!uploadedFile) {
+                        alert('Please upload a dataset first!');
+                        return;
+                    }
+
+                    // Show loading overlay
+                    loadingOverlay.style.display = 'flex';
+
+                    const formData = new FormData(this);
+                    formData.append('file', uploadedFile);
+                    
+                    fetch('/process', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.text())
+                    .then(html => {
+                        document.body.innerHTML = html;
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while processing the data');
+                    })
+                    .finally(() => {
+                        // Hide loading overlay
+                        loadingOverlay.style.display = 'none';
+                    });
+                });
+            });
+
+            document.querySelectorAll('.plot-container').forEach(container => {
+                container.addEventListener('click', function() {
+                    if (!uploadedFile) {
+                        alert('Please upload a dataset first!');
+                        return;
+                    }
+                    this.closest('form').dispatchEvent(new Event('submit'));
+                });
+            });
+        });
+    </script>
+</body>
+</html>
