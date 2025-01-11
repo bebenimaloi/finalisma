@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" style="background: linear-gradient(180deg, #B2EBF2 100%);">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Forest Results</title>
+    <style>
+        body {
+            font-family: Courier New, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(120deg, #e0f7fa, #b3e5fc);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        }
+        .metrics-container {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            width: 100%;
+            max-width: 1200px;
+        }
+        .metric-box {
+            background: rgba(255, 255, 255, 0.514);
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 2rem;
+            border: 2px solid #00000071;
+            transition: all 0.3s ease;
+        }
+        .metric-box:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .warning {
+            background: #e3f2fd;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 2rem;
+            color: red;
+            font-weight: bold;
+        }
+        ul {
+            background: rgba(255, 255, 255, 0.507);
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 2rem 0;
+        }
+        img {
+            border-radius: 15px;
+            border: 2px solid #000000;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 30px 0;
+            max-width: 100%;
+        }
+        a {
+            background: #e3f2fd9d;
+            padding: 1rem;
+            border-radius: 5px;
+            color: #333;
+            text-decoration: none;
+            margin: 2rem 0;
+            display: inline-block;
+        }
+        a:hover {
+            background: #e3f2fd54;
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 300px;
+            background-color: #555;
+            color: #ffffff7e;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <h1>Random Forest Analysis Results</h1>
+    
+    <h2>Best Model Parameters</h2>
+    <ul>
+        {% for param, value in best_params.items() %}
+        <li><strong>{{ param }}:</strong> {{ value }}</li>
+        {% endfor %}
+    </ul>
+
+    <div class="metrics-container">
+        <div class="metric-box">
+            <h2>Training Metrics</h2>
+            <div class="tooltip">
+                <p><strong>Accuracy:</strong> {{ train_metrics.accuracy|round(3) }}</p>
+                <span class="tooltiptext">The proportion of correct predictions (both true positives and true negatives) among all predictions on the training data</span>
+            </div>
+            <div class="tooltip">
+                <p><strong>Precision:</strong> {{ train_metrics.precision|round(3) }}</p>
+                <span class="tooltiptext">The proportion of true positive predictions compared to all positive predictions on the training data</span>
+            </div>
+            <div class="tooltip">
+                <p><strong>Recall:</strong> {{ train_metrics.recall|round(3) }}</p>
+                <span class="tooltiptext">The proportion of actual positive cases that were correctly identified on the training data</span>
+            </div>
+            <div class="tooltip">
+                <p><strong>F1 Score:</strong> {{ train_metrics.f1|round(3) }}</p>
+                <span class="tooltiptext">The harmonic mean of precision and recall, providing a single score that balances both metrics on the training data</span>
+            </div>
+        </div>
+
+        <div class="metric-box">
+            <h2>Testing Metrics</h2>
+            <div class="tooltip">
+                <p><strong>Accuracy:</strong> {{ test_metrics.accuracy|round(3) }}</p>
+                <span class="tooltiptext">The proportion of correct predictions (both true positives and true negatives) among all predictions on the test data</span>
+            </div>
+            <div class="tooltip">
+                <p><strong>Precision:</strong> {{ test_metrics.precision|round(3) }}</p>
+                <span class="tooltiptext">The proportion of true positive predictions compared to all positive predictions on the test data</span>
+            </div>
+            <div class="tooltip">
+                <p><strong>Recall:</strong> {{ test_metrics.recall|round(3) }}</p>
+                <span class="tooltiptext">The proportion of actual positive cases that were correctly identified on the test data</span>
+            </div>
+            <div class="tooltip">
+                <p><strong>F1 Score:</strong> {{ test_metrics.f1|round(3) }}</p>
+                <span class="tooltiptext">The harmonic mean of precision and recall, providing a single score that balances both metrics on the test data</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="tooltip">
+        <p><strong>AUC-ROC Score:</strong> {{ auc_roc }}</p>
+        <span class="tooltiptext">Area Under the Receiver Operating Characteristic Curve - measures the model's ability to distinguish between classes across all possible classification thresholds</span>
+    </div>
+
+    {% if is_overfitting %}
+    <p class="warning">Warning: The model may be overfitting as there is a significant difference between training and testing accuracy.</p>
+    {% else %}
+    <p>The model does not appear to be overfitting.</p>
+    {% endif %}
+
+    <div class="tooltip">
+        <h2>Feature Importance</h2>
+        <span class="tooltiptext">Shows how much each feature contributes to the model's decisions. Higher values indicate more important features.</span>
+    </div>
+    <ul>
+        {% for feature, importance in feature_importance.items() %}
+        <li><strong>{{ feature }}:</strong> {{ importance|round(4) }}</li>
+        {% endfor %}
+    </ul>
+
+    <div class="tooltip">
+        <h2>Feature Importance Visualization</h2>
+        <span class="tooltiptext">A visual representation of feature importance scores. Longer bars indicate features that have more influence on the model's predictions.</span>
+    </div>
+    <img src="data:image/png;base64,{{ images.feature_importance }}" alt="Feature Importances">
+
+    <br>
+    <a href="/">Upload Another File</a>
+</body>
+</html>

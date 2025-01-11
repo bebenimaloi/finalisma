@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Results</title>
+</head>
+<body>
+    <h1>Results for {{ model_name }}</h1>
+    <p><strong>Accuracy:</strong> {{ accuracy }}</p>
+    <p><strong>Precision:</strong> {{ precision }}</p>
+    <p><strong>Recall:</strong> {{ recall }}</p>
+    <p><strong>F1 Score:</strong> {{ f1 }}</p>
+
+    {% if feature_image %}
+    <h2>Feature Importances</h2>
+    <img src="data:image/png;base64,{{ feature_image }}" alt="Feature Importances">
+    {% endif %}
+
+    <a href="/">Upload Another File</a>
+</body>
+</html>

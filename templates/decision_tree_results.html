@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en" style="background: linear-gradient(180deg, #B2EBF2 100%);">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decision Tree Results</title>
+    <style>
+        body {
+            font-family: Courier New, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(120deg, #e0f7fa, #b3e5fc);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        img {
+            border-radius: 15px;
+            border: 2px solid #000000;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 30px 0;
+            max-width: 100%;
+        }
+        a {
+            background: #e3f2fd9d;
+            padding: 1rem;
+            border-radius: 5px;
+            color: #333;
+            text-decoration: none;
+            margin: 2rem 0;
+            display: inline-block;
+        }
+        a:hover {
+            background: #e3f2fd54;
+        }
+        .metrics-container {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            width: 100%;
+            max-width: 1200px;
+        }
+        .metric-box {
+            background: rgba(255, 255, 255, 0.514);
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 2rem;
+            border: 2px solid #00000071;
+            transition: all 0.3s ease;
+        }
+        .metric-box:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <h1>Decision Tree Analysis Results</h1>
+    
+    <div class="metrics-container">
+        <div class="metric-box">
+            <h2>Model Metrics</h2>
+            <p><strong>Accuracy:</strong> {{ metrics.accuracy|round(3) }}</p>
+            <p><strong>Precision:</strong> {{ metrics.precision|round(3) }}</p>
+            <p><strong>Recall:</strong> {{ metrics.recall|round(3) }}</p>
+            <p><strong>F1 Score:</strong> {{ metrics.f1|round(3) }}</p>
+            <p><strong>AUC-ROC Score:</strong> {{ metrics.auc_roc|round(3) }}</p>
+        </div>
+
+        <div class="metric-box">
+            <h2>Tree Statistics</h2>
+            <p><strong>Tree Depth:</strong> {{ tree_depth }}</p>
+            <p><strong>Number of Leaves:</strong> {{ tree_leaves }}</p>
+        </div>
+    </div>
+
+    <h2>Feature Importance Visualization</h2>
+    <img src="data:image/png;base64,{{ images.feature_importance }}" alt="Feature Importances">
+
+    <h2>Decision Tree Visualization</h2>
+    <img src="data:image/png;base64,{{ images.tree_plot }}" alt="Decision Tree">
+
+    <br>
+    <a href="/">Upload Another File</a>
+</body>
+</html>
